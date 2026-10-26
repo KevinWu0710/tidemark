@@ -212,7 +212,10 @@
 
       async function checkConnection() {
         try {
-          const res = await fetch("/api/status", { cache: "no-store" });
+          const basePath = window.location.pathname.endsWith("/")
+            ? window.location.pathname
+            : window.location.pathname + "/";
+          const res = await fetch(basePath + "api/status", { cache: "no-store" });
           if (!res.ok) {
             throw new Error("HTTP " + res.status);
           }
