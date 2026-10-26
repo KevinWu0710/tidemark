@@ -1,0 +1,125 @@
+# tidemark — product settings (all lowercase brand)
+brand:
+  name: tidemark
+  display_zh: 潮線
+  # LINE / Telegram / UI 一律用同一組品牌字
+  notify_prefix: "[tidemark]"
+
+trading:
+  mode: paper          # paper | live
+  instrument: TMF      # 微型台指；做完再擴 MTX / 現股 / 存股 / 正2
+  sessions:
+    - day              # 08:45–13:45
+    - night            # 15:00–05:00
+  capital: 10000       # 紙上本金（見 README 保證金提醒）
+  max_lots: 1          # 嚴格最多 1 口；做完再考慮加碼規則
+  allow_short: false   # 現役只做多
+  point_value: 10      # TMF：1 點 = 10 元
+  # 紙上主路徑：complementary（gap≥120→orb else rsi）| tmf_v1（純 RSI 基線）
+  paper_strategy: complementary
+  # 手續費 / 稅：回測與 paper 都要扣（可之後精調）
+  fee_per_side: 20
+  tax_rate: 0.00002    # 指數期貨約 2/100000（依券商實收調整）
+
+data:
+  root: data
+  cache_dir: data/cache
+  raw_dir: data/raw
+  timezone: Asia/Taipei
+  # 回測推進粒度：一秒一步，禁止偷看未來
+  bar_resolution: 1s
+  # parquet：zstd 較小；環境無 codec 時 LocalStore 會退 snappy
+  parquet_compression: zstd
+
+backtest:
+  # walk-forward：只看 t 當下可得資訊
+  look_ahead: false
+  fill_model: conservative   # conservative = 買 ask / 賣 bid；不足則 mid±1tick
+  slip_ticks: 1
+
+# 紙上主路徑 = trading.paper_strategy（complementary）。
+# tmf_v1 = RSI 腿／基線；tmf_daily_trend = ORB 腿；secure 僅研究對照。
+strategies:
+  # 互補編排器（非單訊號；實際由 complementary_fast + lock 執行）
+  - id: tmf_complementary
+    enabled: true
+    symbol: TMF
+    params:
+      # 鎖：outputs/best_complementary_lock.json
+      # gap≥120 → orb(tmf_daily_trend)；否則 rsi(tmf_v1，09:00 後)
+      selector: gap_ge_120_orb_else_rsi
+      max_lots: 1
+      timeframe: 1m
+
+  # RSI 腿／基線（paper_strategy: tmf_v1 時單跑此槽）
+  - id: tmf_v1
+    enabled: true
+    symbol: TMF
+    params:
+      # 高日勝率鎖（wr_hunt）：IS/OOS 日勝率皆 >80%
+      # RSI28 reclaim>20 只做多；TP40；stop300；日結 flatten
+      inner: rsi_mr
+      rsi_period: 28
+      rsi_low: 20
+      rsi_high: 99.5
+      allow_short: false
+      flatten_off_session: true
+      flatten_eod: true
+      sessions: [day]
+      take_profit_points: 40
+      stop_points: 300
+      max_daily_loss: 0
+      timeframe: 1m
+      max_lots: 1
+      prefilter_enabled: true
+      prefilter_night_ret_le: -120
+      prefilter_skip_open_mins: 60
+      prefilter_max_entry_mins: 150
+
+  # ORB 動能腿（互補分流選 orb 時使用）
+  - id: tmf_daily_trend
+    enabled: true
+    symbol: TMF
+    params:
+      inner: open_gap_orb
+      probe_mins: 15
+      cutoff_mins: 105
+      gap_th: 40.0
+      max_or_range: 250.0
+      vol_spike_mult: 0.0
+      allow_short: false
+      sessions: [day]
+      take_profit_points: 200
+      stop_points: 50
+      breakeven_points: 0
+      time_stop_bars: 45
+      max_daily_loss: 0
+      flatten_off_session: true
+      flatten_eod: true
+      max_lots: 1
+      timeframe: 1m
+      prefilter_enabled: false
+
+  # 研究對照：secure（⊆ trend，非主路徑）
+  - id: tmf_daily_secure
+    enabled: false
+    symbol: TMF
+    params:
+      inner: open_gap_orb
+      probe_mins: 15
+      cutoff_mins: 105
+      gap_th: 40.0
+      max_or_range: 250.0
+      vol_spike_mult: 1.2
+      allow_short: false
+      sessions: [day]
+      take_profit_points: 200
+      stop_points: 50
+      breakeven_points: 50
+      time_stop_bars: 45
+      max_daily_loss: 0
+      flatten_off_session: true
+      flatten_eod: true
+      max_lots: 1
+      timeframe: 1m
+      prefilter_enabled: false

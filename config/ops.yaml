@@ -1,0 +1,23 @@
+# tidemark 全自動 ops（Docker／本機 daemon）
+# 全部時間為 Asia/Taipei
+
+brand: tidemark
+mode: paper          # paper only；禁止 live
+place_sim: false     # true 才對永豐 SIM 真下單（仍非 LIVE）
+
+schedule:
+  # 日盤
+  day_start: "08:40"       # 啟動訂閱／監控
+  day_end: "13:50"         # 停止盤中
+  evening_review: "18:00"  # 每晚覆盤
+  # 日盤 session 標籤（與 data/sessions 一致）
+  session: day
+
+paths:
+  status: outputs/ops/status.json
+  journal: outputs/ops/journal.jsonl
+  days_dir: outputs/ops/days
+
+ui:
+  host: "0.0.0.0"
+  port: 8080

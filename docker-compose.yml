@@ -1,0 +1,89 @@
+# tidemark — Docker Desktop 全自動
+#
+# 開機即跑（推薦）：
+#   1. copy .env.example .env 填 SHIOAJI_SIM_*
+#   2. docker compose up -d --build
+#   3. 瀏覽 http://localhost:8080
+#
+# 服務：
+#   ops  — 盤中 Paper 模擬 + 每晚覆盤（常駐）
+#   ui   — 訊號／策略／下單 三分欄戰情頁（常駐）
+#
+# 工具：
+#   docker compose run --rm smoke
+#   docker compose run --rm live-tick-replay
+
+name: tidemark
+
+x-tidemark-common: &tidemark-common
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: tidemark:local
+  working_dir: /app
+  env_file:
+    - .env
+  environment:
+    TZ: Asia/Taipei
+    PYTHONUNBUFFERED: "1"
+  volumes:
+    - ./data:/app/data
+    - ./outputs:/app/outputs
+    - ./logs:/app/logs
+    - ./config:/app/config:ro
+    - ./certs:/app/certs:ro
+
+services:
+  # —— 全自動（compose up -d 預設啟動）——
+  ops:
+    <<: *tidemark-common
+    command: ["python", "scripts/run_ops_daemon.py", "--poll", "20"]
+    restart: unless-stopped
+
+  ui:
+    <<: *tidemark-common
+    command: ["python", "scripts/run_ui.py"]
+    ports:
+      - "${TIDEMARK_UI_PORT:-8080}:8080"
+    restart: unless-stopped
+    depends_on:
+      - ops
+
+  # —— 工具（手動 run）——
+  smoke:
+    <<: *tidemark-common
+    profiles: ["tools"]
+    command: ["python", "scripts/smoke_check.py"]
+    restart: "no"
+
+  live-tick-replay:
+    <<: *tidemark-common
+    profiles: ["tools"]
+    environment:
+      TZ: Asia/Taipei
+      PYTHONUNBUFFERED: "1"
+      DATE: ${DATE:-}
+    entrypoint: ["python", "scripts/run_live_tick.py"]
+    command: ["--date", "${DATE:-2026-10-16}"]
+    restart: "no"
+
+  sim-day:
+    <<: *tidemark-common
+    profiles: ["tools"]
+    entrypoint: ["python", "scripts/run_sim_day.py"]
+    command: ["--date", "${DATE:-}"]
+    restart: "no"
+
+  # 手動盤中（通常不必；ops 已涵蓋）
+  live-tick:
+    <<: *tidemark-common
+    profiles: ["live"]
+    command: ["python", "scripts/run_live_tick.py", "--subscribe"]
+    restart: unless-stopped
+
+  live-tick-place-sim:
+    <<: *tidemark-common
+    profiles: ["place-sim"]
+    command:
+      ["python", "scripts/run_live_tick.py", "--subscribe", "--place-sim"]
+    restart: unless-stopped

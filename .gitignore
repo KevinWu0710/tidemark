@@ -1,0 +1,44 @@
+# secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.pfx
+credentials*
+certs/*
+!certs/.gitkeep
+
+# python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# data & logs (local only)
+data/cache/
+data/raw/
+logs/
+*.parquet
+*.csv
+!docs/**/*.csv
+shioaji.log
+*.log
+
+# ide / os
+.idea/
+.vscode/
+.cursor/
+.DS_Store
+Thumbs.db
+
+# backtest outputs
+outputs/
+results/

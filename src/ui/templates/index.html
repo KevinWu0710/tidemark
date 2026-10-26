@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>tidemark · 潮線</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg0: #0b1c24;
+      --bg1: #123040;
+      --ink: #e8f2f6;
+      --muted: #8aadb8;
+      --line: rgba(232, 242, 246, 0.12);
+      --sig: #3db8a0;
+      --str: #d4a017;
+      --ord: #5b8def;
+      --ok: #6bcf7f;
+      --bad: #e07878;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh;
+      font-family: "DM Sans", system-ui, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(1200px 600px at 10% -10%, #1a4a5c 0%, transparent 55%),
+        radial-gradient(900px 500px at 100% 0%, #0e3a32 0%, transparent 50%),
+        linear-gradient(165deg, var(--bg0), var(--bg1));
+    }
+    .wrap { max-width: 1100px; margin: 0 auto; padding: 28px 20px 48px; }
+    header { margin-bottom: 22px; border-bottom: 1px solid var(--line); padding-bottom: 16px; }
+    .brand { font-size: clamp(2rem, 5vw, 2.6rem); font-weight: 700; letter-spacing: -0.03em; margin: 0 0 8px; }
+    .brand span { color: var(--sig); font-size: 0.45em; margin-left: 8px; vertical-align: middle; }
+    .status-line { color: var(--muted); font-size: 1rem; line-height: 1.5; }
+    .status-line strong { color: var(--ink); font-weight: 600; }
+    .health {
+      margin-top: 14px; padding: 12px 14px; border-radius: 4px;
+      border: 1px solid var(--line); display: flex; gap: 14px; align-items: flex-start;
+      background: rgba(8, 22, 28, 0.55);
+    }
+    .health .pill {
+      flex: 0 0 auto; font-family: "IBM Plex Mono", monospace; font-size: 0.85rem;
+      font-weight: 500; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line);
+    }
+    .health.ok .pill { color: var(--ok); border-color: rgba(107, 207, 127, 0.45); }
+    .health.warn .pill { color: var(--str); border-color: rgba(212, 160, 23, 0.5); }
+    .health.bad .pill { color: var(--bad); border-color: rgba(224, 120, 120, 0.55); }
+    .health .msg { color: var(--ink); font-size: 0.95rem; line-height: 1.45; }
+    .health .meta { color: var(--muted); font-size: 0.85rem; margin-top: 4px; }
+    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 18px; }
+    @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+    .panel {
+      border: 1px solid var(--line); border-radius: 4px;
+      background: rgba(8, 22, 28, 0.55); padding: 16px 16px 18px;
+    }
+    .panel h2 { margin: 0 0 2px; font-size: 0.8rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+    .panel.sig h2 { color: var(--sig); }
+    .panel.str h2 { color: var(--str); }
+    .panel.ord h2 { color: var(--ord); }
+    .headline { font-size: 1.35rem; font-weight: 700; margin: 8px 0 12px; line-height: 1.25; }
+    .badge {
+      display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 0.72rem;
+      padding: 2px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); margin-bottom: 8px;
+    }
+    ul { margin: 0; padding-left: 1.1rem; color: var(--muted); font-size: 0.95rem; line-height: 1.55; }
+    ul li { margin: 0.25rem 0; }
+    .timeline { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 10px; }
+    .tl-row {
+      display: grid; grid-template-columns: 70px 1fr; gap: 8px;
+      padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 0.9rem;
+    }
+    .tl-row:last-child { border-bottom: 0; }
+    .tl-time { font-family: "IBM Plex Mono", monospace; color: var(--muted); font-size: 0.8rem; }
+    .tl-main { color: var(--ink); }
+    .tl-why { color: var(--muted); font-size: 0.85rem; margin-top: 2px; }
+    .tl-px { font-family: "IBM Plex Mono", monospace; font-size: 0.8rem; color: var(--sig); }
+    .tl-bad { color: var(--bad); }
+    section.journal { margin-top: 28px; }
+    section.journal h2 { font-size: 0.95rem; color: var(--muted); font-weight: 600; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 500; }
+    td.mono { font-family: "IBM Plex Mono", monospace; color: var(--muted); white-space: nowrap; }
+    footer { margin-top: 28px; color: var(--muted); font-size: 0.8rem; }
+    a { color: var(--sig); }
+    .conn-alert {
+      position: fixed;
+      top: 16px;
+      right: 20px;
+      background: var(--bad);
+      color: #0b1c24;
+      font-weight: 700;
+      font-size: 0.85rem;
+      padding: 6px 14px;
+      border-radius: 999px;
+      border: 1px solid rgba(255, 255, 255, 0.4);
+      box-shadow: 0 4px 14px rgba(224, 120, 120, 0.45);
+      display: none;
+      align-items: center;
+      gap: 6px;
+      z-index: 9999;
+      font-family: "IBM Plex Mono", monospace;
+      letter-spacing: 0.02em;
+      animation: pulse-alert 1.5s infinite;
+    }
+    @keyframes pulse-alert {
+      0% { opacity: 0.9; }
+      50% { opacity: 1; transform: scale(1.03); }
+      100% { opacity: 0.9; }
+    }
+  </style>
+</head>
+<body>
+  <div id="conn-alert" class="conn-alert" role="alert">
+    <span>⚠️</span> 連線中斷
+  </div>
+  <div class="wrap">
+    <header>
+      <h1 class="brand">tidemark<span>潮線</span></h1>
+      <p class="status-line">
+        今天是 <strong>{{ date }}</strong>　·　目前：<strong>{{ phase_zh }}</strong>
+        {% if not has_sim_keys %}　·　尚未設定 SIM 金鑰（盤中訂閱會略過，覆盤仍可用 cache）{% endif %}
+      </p>
+      <div class="health {{ health.level }}">
+        <div class="pill">{{ health.label }}</div>
+        <div>
+          <div class="msg">{{ health.hint }}</div>
+          <div class="meta">狀態上次更新 {{ health.updated_local }}　·　畫面每 15 秒自動重整</div>
+        </div>
+      </div>
+    </header>
+
+    <div class="grid">
+      <article class="panel sig">
+        <h2>① 訊號 · 今天做什麼</h2>
+        <div class="badge">{{ signal.badge }}</div>
+        <div class="headline">{{ signal.headline }}</div>
+        <ul>
+          {% for line in signal.lines %}
+          <li>{{ line }}</li>
+          {% endfor %}
+        </ul>
+      </article>
+
+      <article class="panel str">
+        <h2>② 策略 · 怎麼控風險</h2>
+        <div class="badge">{{ strategy.badge }}</div>
+        <div class="headline">{{ strategy.headline }}</div>
+        <ul>
+          {% for line in strategy.lines %}
+          <li>{{ line }}</li>
+          {% endfor %}
+        </ul>
+      </article>
+
+      <article class="panel ord">
+        <h2>③ 下單 · 模擬成交</h2>
+        <div class="badge">{{ orders.badge }}</div>
+        <div class="headline">{{ orders.headline }}</div>
+        <ul>
+          {% for line in orders.lines %}
+          <li>{{ line }}</li>
+          {% endfor %}
+        </ul>
+        {% if orders.timeline %}
+        <div class="timeline">
+          {% for t in orders.timeline %}
+          <div class="tl-row">
+            <div class="tl-time">{{ t.time }}</div>
+            <div>
+              <div class="tl-main {% if not t.ok %}tl-bad{% endif %}">{{ t.what }}　<span class="tl-px">{{ t.price }}</span></div>
+              <div class="tl-why">{{ t.why }}{% if not t.ok %}（未成交）{% endif %}</div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </article>
+    </div>
+
+    <section class="journal">
+      <h2>系統在做什麼（最近紀錄）</h2>
+      <table>
+        <thead><tr><th>時間</th><th>事件</th><th>說明</th></tr></thead>
+        <tbody>
+          {% for j in journal_rows %}
+          <tr>
+            <td class="mono">{{ j.ts }}</td>
+            <td>{{ j.what }}</td>
+            <td>{{ j.detail }}</td>
+          </tr>
+          {% else %}
+          <tr><td colspan="3">尚無紀錄。啟動 ops 後會自動寫入。</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+
+    <footer>
+      {{ prefix }} 唯讀畫面 · 15 秒自動更新 · 這是<strong>模擬</strong>不是真倉
+    </footer>
+  </div>
+  <script>
+    (function() {
+      let failCount = 0;
+      const MAX_FAILS = 3;
+      const alertEl = document.getElementById("conn-alert");
+      let lastReload = Date.now();
+
+      async function checkConnection() {
+        try {
+          const res = await fetch("/api/status", { cache: "no-store" });
+          if (!res.ok) {
+            throw new Error("HTTP " + res.status);
+          }
+          const recovered = failCount >= MAX_FAILS;
+          failCount = 0;
+          if (alertEl) alertEl.style.display = "none";
+
+          // 若曾斷線後恢復，或正常連線且間隔滿 15 秒，自動重整取得最新完整畫面
+          if (recovered || Date.now() - lastReload >= 15000) {
+            location.reload();
+          }
+        } catch (err) {
+          failCount++;
+          if (failCount >= MAX_FAILS) {
+            if (alertEl) alertEl.style.display = "flex";
+          }
+        }
+      }
+
+      // 每 5 秒檢查一次連線；連續 3 次失敗（15 秒）即跳出連線中斷紅標
+      setInterval(checkConnection, 5000);
+    })();
+  </script>
+</body>
+</html>

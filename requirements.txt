@@ -1,0 +1,13 @@
+pandas>=2.0
+numpy>=1.26
+pyarrow>=14.0
+pyyaml>=6.0
+python-dotenv>=1.0
+loguru>=0.7
+requests>=2.31
+# UI / ops daemon
+fastapi>=0.115
+uvicorn[standard]>=0.30
+jinja2>=3.1
+# broker (installed on this machine; pin if needed)
+shioaji>=1.2
