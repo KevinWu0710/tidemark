@@ -135,13 +135,26 @@ class DailyOpsRunner:
         try:
             now = self._now()
             remain = max(60, (self.day_end - _mins_now(now)) * 60)
-            # 另開 watchdog：day_end / stop 時停 loop
+            # 另開 watchdog：day_end / stop 時停 loop；每 30 秒更新盤中心跳
             def _watch() -> None:
+                last_hb = 0.0
                 while not self._session_stop.is_set():
                     n = self._now()
                     if self._date_str(n) != date or _mins_now(n) >= self.day_end:
                         loop.stop()
                         break
+                    now_t = time.time()
+                    if now_t - last_hb >= 30.0:
+                        last_hb = now_t
+                        self._set_phase(
+                            "session_day",
+                            live={
+                                "kind": "heartbeat",
+                                "n_bars": getattr(loop, "_n_bars_closed", 0),
+                                "n_events": len(loop._events),
+                                "choice": (loop._choice_info or {}).get("choice"),
+                            },
+                        )
                     time.sleep(5)
 
             threading.Thread(target=_watch, name="session-watch", daemon=True).start()
